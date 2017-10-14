@@ -13,24 +13,20 @@ struct number
     string value;
     char base;
 };
-int f_point(number in)
-{
-    int point(0);
-    for(int i = 0; i < in.value.length(); i++)
-    {
-        point++;
-        if(in.value[i] == '.' || in.value[i] == ',') { point-- ; break;}
-    }
-    return point;
-}
+int f_point(number in);
+void oct_hex_to_bin(number in, number& out);
+void dec_to_bin(number in, number& out);
+void bin_to_oct_hex(number in, number& out);
+void bin_to_dec(number in, number& out);
+void output(number out);
+
 void oct_hex_to_bin(number in, number& out)
 {
     char temp;
     if(in.base == 'b' || in.base == 'B')
     {
-        for(int i = 0; i < in.value.length(); i++)
-        {
-            temp = in.value[i];
+        for (char i : in.value) {
+            temp = i;
             switch(temp)
             {
                 case '0':
@@ -61,14 +57,14 @@ void oct_hex_to_bin(number in, number& out)
                 case '.':
                     out.value.append(",");
                     break;
-                }
+                default: break;
             }
         }
+    }
     else if(in.base == 'c' || in.base == 'C')
     {
-        for(int i = 0; i < in.value.length(); i++)
-        {
-            temp = in.value[i];
+        for (char i : in.value) {
+            temp = i;
             switch(temp)
             {
                 case '0':
@@ -100,7 +96,7 @@ void oct_hex_to_bin(number in, number& out)
                     break;
                 case '9':
                     out.value.append("1001");
-                break;
+                    break;
                 case 'a':
                 case 'A':
                     out.value.append("1010");
@@ -129,20 +125,19 @@ void oct_hex_to_bin(number in, number& out)
                 case '.':
                     out.value.append(",");
                     break;
-                }
+                default: break;
+            }
         }
     }
 }
 void dec_to_bin(number in, number& out)
 {
     const int max_bin = 20;
-    float f_val, d_val;
-    {
-        istringstream iss (in.value);
-        float in_value;
-        iss >> in_value;
-        f_val = modf(in_value, &d_val);
-    }
+    istringstream iss (in.value);
+    double in_value;
+    iss >> in_value;
+    long double f_val, d_val;
+    f_val = modf(in_value, &d_val);
     bool ss(false);
     for(int i = max_bin; i >= 0; i--)
     {
@@ -152,11 +147,12 @@ void dec_to_bin(number in, number& out)
             d_val -= pow(2, i);
             out.value.append("1");
         }
-        else if(ss == true && d_val < pow(2, i))
+        else if(d_val < pow(2, i) && ss)
         {
             out.value.append("0");
         }
     }
+    if(!ss) out.value.append("0");
     if(f_val > 0)
     {
         out.value.append(",");
@@ -177,7 +173,7 @@ void dec_to_bin(number in, number& out)
 void bin_to_oct_hex(number in, number& out)
 {
     int lim = f_point(in);
-    char temp_ch;
+    string temp_ch;
     if(out.base == 'b' || out.base == 'B')
     {
         if(in.value.length() - lim - 1 > 0 && (in.value.length() - lim - 1) % 3 == 1) in.value.append("00");
@@ -190,7 +186,7 @@ void bin_to_oct_hex(number in, number& out)
             if(in.value[i] == '1') temp += 4;
             if(in.value[i + 1] == '1') temp += 2;
             if(in.value[i + 2] == '1') temp += 1;
-            temp_ch = temp + 48;
+            temp_ch = to_string(temp);
             out.value += temp_ch;
         }
         if(in.value.length() - lim > 0)
@@ -202,7 +198,7 @@ void bin_to_oct_hex(number in, number& out)
                 if(in.value[i] == '1') temp += 4;
                 if(in.value[i + 1] == '1') temp += 2;
                 if(in.value[i + 2] == '1') temp += 1;
-                temp_ch = temp + 48;
+                temp_ch = to_string(temp);
                 out.value += temp_ch;
             }
 
@@ -241,6 +237,7 @@ void bin_to_oct_hex(number in, number& out)
                 case 13: temp_ch = 'D'; break;
                 case 14: temp_ch = 'E'; break;
                 case 15: temp_ch = 'F'; break;
+                default: break;
             }
             out.value += temp_ch;
         }
@@ -272,6 +269,7 @@ void bin_to_oct_hex(number in, number& out)
                     case 13: temp_ch = 'D'; break;
                     case 14: temp_ch = 'E'; break;
                     case 15: temp_ch = 'F'; break;
+                    default: break;
                 }
                 out.value += temp_ch;
             }
@@ -282,6 +280,7 @@ void bin_to_dec(number in, number& out)
 {
     int lim = f_point(in), n(0);
     float temp(0);
+    int precision(0);
     for(int i = lim - 1; i >= 0; i--)
     {
         if(in.value[i] == '1') temp += pow(2, n);
@@ -289,6 +288,8 @@ void bin_to_dec(number in, number& out)
     }
     if(in.value.length() - lim > 0)
     {
+        cout << "Enter precision value: ";
+        cin >> precision;
         n = -1;
         for(int i = lim + 1; i < in.value.length(); i++)
         {
@@ -296,10 +297,18 @@ void bin_to_dec(number in, number& out)
             n--;
         }
     }
-    setprecision(10);
     ostringstream strs;
-    strs << fixed << setprecision(10) << temp;
+    strs << fixed << setprecision(precision) << temp;
     out.value = strs.str();
+}
+int f_point(number in)
+{
+    int point(0);
+    for (char i : in.value) {
+        point++;
+        if(i == '.' || i == ',') { point-- ; break;}
+    }
+    return point;
 }
 void output(number out)
 {
