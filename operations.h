@@ -11,19 +11,21 @@ using namespace std;
 struct number
 {
     string value;
-    char base;
+    int base;
 };
-int f_point(number in);
+void f_point(number in, int &f_lim, int &d_lim);
 void oct_hex_to_bin(number in, number& out);
 void dec_to_bin(number in, number& out);
 void bin_to_oct_hex(number in, number& out);
 void bin_to_dec(number in, number& out);
 void output(number out);
+long double power(int a, int n);
+long long int f_separation(number in, int d_lim);
 
 void oct_hex_to_bin(number in, number& out)
 {
     char temp;
-    if(in.base == 'b' || in.base == 'B')
+    if(in.base == 2)
     {
         for (char i : in.value) {
             temp = i;
@@ -61,7 +63,7 @@ void oct_hex_to_bin(number in, number& out)
             }
         }
     }
-    else if(in.base == 'c' || in.base == 'C')
+    else if(in.base == 3)
     {
         for (char i : in.value) {
             temp = i;
@@ -133,36 +135,39 @@ void oct_hex_to_bin(number in, number& out)
 void dec_to_bin(number in, number& out)
 {
     const int max_bin = 20;
-    istringstream iss (in.value);
-    double in_value;
-    iss >> in_value;
-    long double f_val, d_val;
-    f_val = modf(in_value, &d_val);
     bool ss(false);
+    long double in_value, d_val;
+    int f_lim(0), d_lim(0);
+    long long int f_val;
+    f_point(in, f_lim, d_lim);
+    f_val = f_separation(in, d_lim);
+    cout << f_val << "x";
+    istringstream iss (in.value);
+    iss >> in_value;
+    d_val = floor(in_value);
     for(int i = max_bin; i >= 0; i--)
     {
-        if(d_val >= pow(2, i))
+        if(d_val >= power(2, i))
         {
             ss = true;
-            d_val -= pow(2, i);
+            d_val -= power(2, i);
             out.value.append("1");
         }
-        else if(d_val < pow(2, i) && ss)
-        {
+        else if(d_val < pow(2, i) && ss) {
             out.value.append("0");
         }
     }
     if(!ss) out.value.append("0");
-    if(f_val > 0)
+    if(f_lim > 0)
     {
         out.value.append(",");
         int i(0);
-        while(f_val != 0 && i < 20)
+        while(f_val != 0 && i < 120)
         {
             f_val *= 2;
-            if(f_val >= 1)
+            if(f_val >= power(10, f_lim ))
             {
-                f_val--;
+                f_val -= power(10, f_lim);
                 out.value.append("1");
             }
             else out.value.append("0");
@@ -172,15 +177,16 @@ void dec_to_bin(number in, number& out)
 }
 void bin_to_oct_hex(number in, number& out)
 {
-    int lim = f_point(in);
+    int f_lim(0), d_lim(0);
+    f_point(in, f_lim, d_lim);
     string temp_ch;
-    if(out.base == 'b' || out.base == 'B')
+    if(out.base == 2)
     {
-        if(in.value.length() - lim - 1 > 0 && (in.value.length() - lim - 1) % 3 == 1) in.value.append("00");
-        else if(in.value.length() - lim - 1 > 0 && (in.value.length() - lim - 1) % 3 == 2) in.value.append("0");
-        if(lim % 3 == 1) { in.value.insert (0, 2, '0'); lim += 2;}
-        else if(lim % 3 == 2) { in.value.insert (0, 1, '0'); lim++;}
-        for(int i = 0; i < lim; i += 3)
+        if(f_lim % 3 == 1) in.value.append("00");
+        else if(f_lim % 3 == 2) in.value.append("0");
+        if(d_lim % 3 == 1) { in.value.insert (0, 2, '0'); d_lim += 2;}
+        else if(d_lim % 3 == 2) { in.value.insert (0, 1, '0'); d_lim++;}
+        for(int i = 0; i < d_lim; i += 3)
         {
             int temp(0);
             if(in.value[i] == '1') temp += 4;
@@ -189,10 +195,10 @@ void bin_to_oct_hex(number in, number& out)
             temp_ch = to_string(temp);
             out.value += temp_ch;
         }
-        if(in.value.length() - lim > 0)
+        if(f_lim > 0)
         {
             out.value.append(",");
-            for(int i = lim + 1; i < in.value.length(); i += 3)
+            for(int i = d_lim + 1; i < in.value.length(); i += 3)
             {
                 int temp(0);
                 if(in.value[i] == '1') temp += 4;
@@ -204,15 +210,15 @@ void bin_to_oct_hex(number in, number& out)
 
         }
     }
-    else if(out.base == 'c' || out.base == 'C')
+    else if(out.base == 3)
     {
-        if(in.value.length() - lim - 1 > 0 && (in.value.length() - lim - 1) % 4 == 1) in.value.append("000");
-        else if(in.value.length() - lim - 1 > 0 && (in.value.length() - lim - 1) % 4 == 2) in.value.append("00");
-        else if(in.value.length() - lim - 1 > 0 && (in.value.length() - lim - 1) % 4 == 3) in.value.append("0");
-        if(lim % 4 == 1) { in.value.insert (0, 3, '0'); lim += 3;}
-        else if(lim % 4 == 2) { in.value.insert (0, 2, '0'); lim += 2;}
-        else if(lim % 4 == 3) { in.value.insert (0, 1, '0'); lim++;}
-        for(int i = 0; i < lim; i += 4)
+        if(f_lim % 4 == 1) in.value.append("000");
+        else if(f_lim % 4 == 2) in.value.append("00");
+        else if(f_lim % 4 == 3) in.value.append("0");
+        if(d_lim % 4 == 1) { in.value.insert (0, 3, '0'); d_lim += 3;}
+        else if(d_lim % 4 == 2) { in.value.insert (0, 2, '0'); d_lim += 2;}
+        else if(d_lim % 4 == 3) { in.value.insert (0, 1, '0'); d_lim++;}
+        for(int i = 0; i < d_lim; i += 4)
         {
             int temp(0);
             if(in.value[i] == '1') temp += 8;
@@ -241,10 +247,10 @@ void bin_to_oct_hex(number in, number& out)
             }
             out.value += temp_ch;
         }
-        if(in.value.length() - lim - 1 > 0)
+        if(f_lim > 0)
         {
             out.value.append(",");
-            for(int i = lim + 1; i < in.value.length(); i += 4)
+            for(int i = d_lim + 1; i < in.value.length(); i += 4)
             {
                 int temp(0);
                 if(in.value[i] == '1') temp += 8;
@@ -278,22 +284,23 @@ void bin_to_oct_hex(number in, number& out)
 }
 void bin_to_dec(number in, number& out)
 {
-    int lim = f_point(in), n(0);
+    int d_lim(0), f_lim(0), n(0), precision(0);
     float temp(0);
-    int precision(0);
-    for(int i = lim - 1; i >= 0; i--)
+    f_point(in, f_lim, d_lim);
+
+    for(int i = d_lim; i >= 0; i--)
     {
-        if(in.value[i] == '1') temp += pow(2, n);
+        if(in.value[i] == '1') temp += power(2, n);
         n++;
     }
-    if(in.value.length() - lim > 0)
+    if(f_lim > 0)
     {
-        cout << "Enter precision value: ";
+        cout << "\nEnter precision value: ";
         cin >> precision;
         n = -1;
-        for(int i = lim + 1; i < in.value.length(); i++)
+        for(int i = d_lim; i < in.value.length(); i++)
         {
-            if(in.value[i] == '1') temp += pow(2, n);
+            if(in.value[i] == '1') temp += power(2, n);
             n--;
         }
     }
@@ -301,18 +308,42 @@ void bin_to_dec(number in, number& out)
     strs << fixed << setprecision(precision) << temp;
     out.value = strs.str();
 }
-int f_point(number in)
+void f_point(number in, int &f_lim, int &d_lim)
 {
-    int point(0);
     for (char i : in.value) {
-        point++;
-        if(i == '.' || i == ',') { point-- ; break;}
+        if(i == '.' || i == ',') break;
+        d_lim++;
     }
-    return point;
+    if(d_lim + 1 != in.value.length())
+    {
+        for (int i = d_lim + 2; i <= in.value.length(); i++)
+        {
+            f_lim++;
+        }
+    }
 }
 void output(number out)
 {
     cout << "\nOutput number: " << out.value;
+}
+long double power(int a, int n)
+{
+    double ans(1);
+    if(n > 0) for(int i = 0; i < n; i++) ans *= a;
+    else if(n < 0) for(int i = 0; i > n; i--) ans /= a;
+
+    return ans;
+}
+long long int f_separation(number in, int d_lim)
+{
+    long long int a(0);
+    for(int i = d_lim + 1; i < in.value.length(); i++)
+    {
+        a *= 10;
+        a += in.value[i] - 48;
+    }
+
+    return a;
 }
 
 #endif // OPERATIONS_H_INCLUDED
